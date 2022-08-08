@@ -35,8 +35,21 @@ class Map:
         \param t translation from camera (input) to world (map), (3, )
         \return None, update map properties IN PLACE
         '''
-        print(indices.shape)
-        exit()
+        transformed_points = ((R @ self.points[indices].T) + t).T
+        transformed_normals = (R @ self.normals[indices].T).T
+        weights_transformed_points = self.weights[indices]
+        color_transformed_points = self.colors[indices]
+        weights = np.ones((transformed_points.shape[0],1))
+
+        avg_points = (weights_transformed_points*transformed_points + points)/(weights_transformed_points + 1)
+        avg_normals = (weights_transformed_points*transformed_normals + normals)/(weights_transformed_points + 1)
+        avg_normals_normalized = avg_normals/np.linalg.norm(avg_normals, axis=1).reshape(-1,1)
+        avg_colors = (weights_transformed_points*color_transformed_points + colors)/(weights_transformed_points + 1)
+
+        self.points[indices] = avg_points
+        self.normals[indices] = avg_normals_normalized
+        self.colors[indices] = avg_colors
+        self.weights[indices] = weights
         pass
 
     def add(self, points, normals, colors, R, t):
